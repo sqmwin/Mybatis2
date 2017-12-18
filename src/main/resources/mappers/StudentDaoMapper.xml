@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.sqm.dao.StudentDao">
+    <resultMap id="StudentMap" type="com.sqm.pojo.Student">
+        <result column="s_id" property="id"/>
+        <result column="s_name" property="name"/>
+        <result column="s_age" property="age"/>
+        <result column="s_score" property="score"/>
+    </resultMap>
+
+    <!--sql标签:定义sql语句片段-->
+    <sql id="selectHead">
+        SELECT * FROM student
+    </sql>
+    <sql id="iterateStudentId">
+        <foreach collection="list" open="(" close=")" separator="," item="arg0" >
+            #{arg0.id}
+        </foreach>
+    </sql>
+
+    <!--根据if标签输出语句:判断给出的数据中的条件-->
+    <select id="selectStudentsIf" resultMap="StudentMap">
+        SELECT *
+        FROM student
+        WHERE 1 = 1
+        <if test="name != null and name != ''">
+            AND s_name LIKE '%' #{name} '%'
+        </if>
+        <if test="age > 0">
+            AND s_age &gt; #{age}
+        </if>
+    </select>
+
+    <!--根据if标签条件输出语句,被where包含,若if全为false,则where中的语句相当于true-->
+    <!--第一个AND可以不写,但之后if标签下的AND必须要写-->
+    <select id="selectStudentsWhere" resultMap="StudentMap">
+        SELECT *
+        FROM student
+        <where>
+            <if test="name != null and name != ''">
+                AND s_name LIKE '%' #{name} '%'
+            </if>
+            <if test="age > 0">
+                AND s_age &gt; #{age}
+            </if>
+        </where>
+    </select>
+
+    <!--根据choose条件输出语句,choose中只能有一个或多个when标签和一个otherwise标签,相当于switch...case语句-->
+    <select id="selectStudentsChoose" resultMap="StudentMap">
+        SELECT * FROM student
+        <where>
+            <choose>
+              <when test="arg0 != null and arg0 != ''">
+                  AND s_name LIKE '%' #{arg0} '%'
+              </when>
+                <when test="arg1 > 0">
+                    AND s_age = ${arg1}
+                </when>
+                <otherwise>
+                    AND 1 != 1
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <!--根据给出的数组条件,遍历数组获取数据-->
+    <!--OGNL表达式中数组array使用array表示,数组长度使用array.length表示-->
+    <select id="selectStudentsForeachArray" resultMap="StudentMap">
+        SELECT * FROM student
+        <where>
+            <if test="array != null and array.length > 0 " >
+                s_id IN
+                <foreach collection="array" open="(" close=")" item="myid" separator=",">
+                    #{myid}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--根据给出的基本类型List集合条件返回数据结果,使用foreach遍历条件-->
+    <!--OGNL表达式中List集合使用list表示,list大小使用list.size表示-->
+    <select id="selectStudentsForeachList" resultMap="StudentMap">
+        SELECT * FROM student
+        <where>
+            <if test=" list != null and list.size > 0">
+                s_id IN
+                <foreach collection="list" open="(" close=")" separator="," item="arg0">
+                    #{arg0}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--根据给出的自定义类型List集合条件返回数据结果,使用foreach遍历条件-->
+    <select id="selectStudentsForeachList2" resultMap="StudentMap">
+      SELECT * FROM student
+      <where>
+          <if test="list != null and list.size > 0">
+              s_id IN
+              <foreach collection="list" item="student" open="(" close=")" separator=",">
+                  #{student.id}
+              </foreach>
+          </if>
+      </where>
+    </select>
+
+    <!--测试sql标签-->
+    <select id="selectStudentsBySqlFragment" resultMap="StudentMap">
+      <include refid="selectHead"/>
+      <where>
+          <if test="list != null and list.size >0">
+              s_id IN
+              <include refid="iterateStudentId"/>
+          </if>
+      </where>
+    </select>
+</mapper>
